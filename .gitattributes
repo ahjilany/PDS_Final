@@ -1,2 +1,63 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Import Necessary Libraries
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Load the Titanic Dataset
+titanic = sns.load_dataset("titanic")
+
+# Display first few rows and basic information
+print(titanic.head())
+print(titanic.info())
+print("Missing Values:\n", titanic.isnull().sum())
+
+# Data Cleaning
+# Fill missing values in 'age' with the median
+titanic['age'].fillna(titanic['age'].median(), inplace=True)
+
+# Fill missing values in 'embarked' with the most common value
+titanic['embarked'].fillna(titanic['embarked'].mode()[0], inplace=True)
+
+# Drop columns with many missing values and unnecessary columns
+titanic.drop(['deck', 'embark_town', 'alive'], axis=1, inplace=True)
+
+# Feature Engineering - Convert categorical variables to dummy variables
+titanic = pd.get_dummies(titanic, columns=['sex', 'embarked', 'class', 'who', 'adult_male', 'alone'], drop_first=True)
+
+# Data Visualization
+# Plot survival by sex
+sns.countplot(x='sex_male', hue='survived', data=titanic)
+plt.title('Survival by Sex')
+plt.show()
+
+# Plot survival by class
+sns.countplot(x='class_Second', hue='survived', data=titanic)
+plt.title('Survival by Class')
+plt.show()
+
+# Define features and target variable
+X = titanic.drop('survived', axis=1)
+y = titanic['survived']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize and Train the Model
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+# Make Predictions and Evaluate
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy:.2f}')
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+# Feature Importance Analysis
+feature_importances = pd.Series(model.feature_importances_, index=X.columns)
+feature_importances.sort_values(ascending=False).plot(kind='bar')
+plt.title('Feature Importance')
+plt.show()
